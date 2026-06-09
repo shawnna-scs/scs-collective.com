@@ -1488,7 +1488,7 @@
         </div>
       </div>
 
-      <form class="contact-form" action="https://formspree.io/f/xpqelzba" method="POST" onsubmit="handleSubmit(event)">
+      <form class="contact-form" id="contact-form" onsubmit="handleSubmit(event)">
         <input type="hidden" name="_replyto" value="shawnna@scs-collective.com" />
         <div class="form-row">
           <div class="form-group">
@@ -1574,23 +1574,44 @@
     }
   }
 
-  // Contact form submit — sends to Formspree
-  function handleSubmit(e) {
-    const form = e.target;
-    // If Formspree action is set, let native submit handle it
-    if (form.action && form.action.includes('formspree')) {
-      // Show success after a beat
-      setTimeout(() => {
-        document.getElementById('form-success').style.display = 'block';
-      }, 800);
-      return true;
-    }
+  // Contact form — AJAX submit to Formspree, no redirect
+  async function handleSubmit(e) {
     e.preventDefault();
-    document.getElementById('form-success').style.display = 'block';
-    form.reset();
-    setTimeout(() => {
-      document.getElementById('form-success').style.display = 'none';
-    }, 5000);
+    const form = e.target;
+    const btn = form.querySelector('button[type="submit"]');
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
+    const data = new FormData(form);
+    // Add named fields manually since inputs don't have name attrs
+    data.append('first_name', document.getElementById('fname').value);
+    data.append('last_name', document.getElementById('lname').value);
+    data.append('email', document.getElementById('email').value);
+    data.append('topic', document.getElementById('topic').value);
+    data.append('message', document.getElementById('message').value);
+
+    try {
+      const res = await fetch('https://formspree.io/f/xpqelzba', {
+        method: 'POST',
+        body: data,
+        headers: { 'Accept': 'application/json' }
+      });
+      if (res.ok) {
+        form.reset();
+        document.getElementById('form-success').style.display = 'block';
+        btn.textContent = 'Send Message';
+        btn.disabled = false;
+        setTimeout(() => {
+          document.getElementById('form-success').style.display = 'none';
+        }, 6000);
+      } else {
+        btn.textContent = 'Try again';
+        btn.disabled = false;
+      }
+    } catch {
+      btn.textContent = 'Try again';
+      btn.disabled = false;
+    }
   }
 
   // Scroll-activated nav link highlighting
